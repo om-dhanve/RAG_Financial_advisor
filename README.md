@@ -12,7 +12,10 @@ Ask consumer-facing banking questions in plain English — *"What's the recurrin
 
 ## 🎥 Demo
 
-> 📹 **Demo video coming soon** — a 2-3 minute walkthrough showing the retrieval + generation pipeline answering real banking questions will be embedded here.
+<video width="400" controls>
+  <source src="https://youtu.be/6FbwKNKY6MU" type="video/mp4">
+  Your browser does not support HTML5 video.
+</video>
 
 ---
 
@@ -29,8 +32,7 @@ It's built with an eye toward production concerns, not just "does it answer ques
 
 ## 🏗️ Architecture
 
-
-
+![Architecture](https://github.com/om-dhanve/RAG_Financial_advisor/issues/1#issue-5314959525) 
 
 Every chunk carries metadata — **bank, source URL** — so retrieval can cite where they came from.
 
