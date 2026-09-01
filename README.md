@@ -21,34 +21,18 @@ Ask consumer-facing banking questions in plain English — *"What's the recurrin
 Most RAG tutorials use generic or academic datasets. This project targets a genuinely useful, domain-specific use case: **consumer banking Q&A grounded in real, publicly available Indian bank documentation** (SBI, HDFC — prototype phase, scaling to ICICI, Axis, Kotak).
 
 It's built with an eye toward production concerns, not just "does it answer questions":
-- **Hybrid retrieval** (dense + sparse) to handle bank-specific terminology and exact figures that pure semantic search tends to blur
+- **PGVector retriver** Using the built in retriver and similarity search function of PGVector
 - **A hosted, production-aligned vector store** (Supabase/pgvector) instead of a local-only vector DB
 - **RAGAS evaluation** to actually measure retrieval and generation quality, not just eyeball it
-- **A clean API boundary** (FastAPI) so the RAG logic is a deployable service, not just a notebook script
-
+- **Intuitive UI** Simple and easy to understand User interface using Gradio.
 ---
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart LR
-    subgraph Ingestion["Ingestion Pipeline"]
-        A["Bank FAQ pages & T&Cs (SBI, HDFC)"] -->|HTML / PDF| B["document_ingestion.py"]
-        B -->|chunk + metadata| C["BGE embeddings"]
-        C --> D[("Supabase / pgvector")]
-    end
 
-    subgraph Query["Query Pipeline"]
-        E["User"] --> F["user_interface.py (Gradio / Streamlit)"]
-        F -->|HTTP request| G["api.py (FastAPI)"]
-        G --> H["response_generation.py"]
-        H -->|hybrid: dense + BM25| D
-        H --> I["Gemini LLM"]
-        I --> H --> G --> F --> E
-    end
-```
 
-Every chunk carries metadata — **bank, product category, document type, source URL** — so retrieval can be filtered and answers can cite where they came from.
+
+Every chunk carries metadata — **bank, source URL** — so retrieval can cite where they came from.
 
 ---
 
@@ -59,12 +43,11 @@ Every chunk carries metadata — **bank, product category, document type, source
 | Orchestration | LangChain |
 | Vector store | Supabase / pgvector (Postgres) |
 | Embeddings | HuggingFace `BAAI/bge-small-en-v1.5` |
-| Retrieval | Hybrid — dense (pgvector) + sparse (BM25) via `EnsembleRetriever` |
+| Retrieval | Dense (pgvector) + (Future integration of Sparse BM25 retriever) |
 | LLM | Google Gemini |
 | Evaluation | RAGAS |
 | Tracing | LangSmith |
-| API | FastAPI |
-| UI | Gradio / Streamlit |
+| UI | Gradio |
 
 ---
 
@@ -78,9 +61,7 @@ v1 baseline, measured on a hand-authored set of ~20-30 Q&A pairs against the ing
 | Context Precision | 0.6000 |
 | Context Recall | 0.6250 |
 
-**Reading these honestly:** faithfulness is solid — the model is largely staying grounded in retrieved content rather than hallucinating. Context precision and recall are more moderate, which points at retrieval — not generation — as the next place to invest: better chunking, tuning the hybrid retriever's dense/sparse weighting, and expanding the document set are the likely levers for the next iteration.
-
-*(Same-model self-grading caveat: Gemini is used as both the generator and the RAGAS judge here — a known bias risk worth keeping in mind when interpreting these numbers.)*
+**Reading these honestly:** faithfulness is solid — the model is largely staying grounded in retrieved content rather than hallucinating. Context precision and recall are more moderate, which points at retrieval — not generation — as the next place to invest: better chunking, tuning the hybrid retriever, and expanding the document set are the likely levers for the next iteration.
 
 ---
 
@@ -88,11 +69,10 @@ v1 baseline, measured on a hand-authored set of ~20-30 Q&A pairs against the ing
 
 ```
 RAG_Financial_Advisor/
-├── config.py                # env vars, model names, chunk size (pydantic-settings)
+├── config.py                 # env vars, model names, chunk size (pydantic-settings)
 ├── models.py                 # Pydantic schemas — API I/O + chunk metadata
 ├── document_ingestion.py     # fetch → parse → chunk → embed → upsert to Supabase
 ├── response_generation.py    # embed query → hybrid retrieve → prompt → LLM → response
-├── api.py                    # FastAPI routes
 ├── user_interface.py         # Gradio / Streamlit UI (calls api.py over HTTP)
 ├── requirements.txt
 ├── .env.example
@@ -116,10 +96,14 @@ pip install -r requirements.txt
 
 Copy `.env.example` to `.env` and fill in:
 ```
-GOOGLE_API_KEY=your_gemini_api_key
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_KEY=your_supabase_service_key
-LANGCHAIN_API_KEY=your_langsmith_key   # optional, for tracing
+GOOGLE_API_KEY=your_google_api_key_here    # Google AI / Gemini API Key
+HF_TOKEN=hf_your_hugging_face_token_here   # Hugging Face User Access Token
+LANGSMITH_TRACING=true                     # LangSmith Observability
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_API_KEY=lsv2_pt_your_langsmith_api_key_here
+LANGSMITH_PROJECT="my-project-name"
+TEMPERATURE=0.7                            # LLM Generation Temperature (e.g., 0.0 to 1.0)
+SUPABASE_DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres"
 ```
 
 **3. Ingest documents into the vector store**
@@ -127,16 +111,14 @@ LANGCHAIN_API_KEY=your_langsmith_key   # optional, for tracing
 python document_ingestion.py
 ```
 
-**4. Run the API**
+**4. Run the response_generation.py**
 ```bash
-uvicorn api:app --reload
+If you want to test the complete rag pipleline without the UI. 
+Run the response_generation.py which takes a user question as input and gives output on terminal.
 ```
-Swagger docs available at `http://localhost:8000/docs`.
 
 **5. Run the UI**
 ```bash
-streamlit run user_interface.py
-# or, if using Gradio:
 python user_interface.py
 ```
 
