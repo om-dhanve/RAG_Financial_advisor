@@ -12,10 +12,7 @@ Ask consumer-facing banking questions in plain English — *"What's the recurrin
 
 ## 🎥 Demo
 
-<video width="400" controls>
-  <source src="https://youtu.be/6FbwKNKY6MU" type="video/mp4">
-  Your browser does not support HTML5 video.
-</video>
+[![Watch the demo](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=6FbwKNKY6MU)
 
 ---
 
@@ -32,7 +29,7 @@ It's built with an eye toward production concerns, not just "does it answer ques
 
 ## 🏗️ Architecture
 
-![Architecture](https://github.com/om-dhanve/RAG_Financial_advisor/issues/1#issue-5314959525) 
+<img width="1795" height="956" alt="Image" src="https://github.com/user-attachments/assets/5f4ed81c-fa39-4cec-ab13-ef27fcd7dbd9" />
 
 Every chunk carries metadata — **bank, source URL** — so retrieval can cite where they came from.
 
