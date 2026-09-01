@@ -15,6 +15,7 @@ Ask consumer-facing banking questions in plain English — *"What's the recurrin
 [![Watch the demo](https://img.youtube.com/vi/YOUR_YOUTUBE_VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=6FbwKNKY6MU)
 
 Click the thumbnail above to watch a 2-3 minute walkthrough showing real banking queries being answered with retrieval + generation.
+
 ---
 
 ## 🧠 What this is
