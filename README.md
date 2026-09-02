@@ -163,3 +163,9 @@ python user_interface.py
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## Disclaimer 
+
+Disclaimer: This project is an independent, educational portfolio project and is not affiliated with, endorsed by, or sponsored by State Bank of India (SBI), HDFC Bank, or any other financial institution referenced. Bank names, product names, and publicly available FAQ/T&C content are used solely for demonstration and educational purposes. All trademarks, logos, and content belong to their respective owners. This project does not provide financial advice — always refer to the official bank website for accurate, up-to-date information.
