@@ -1,4 +1,5 @@
 #Using RAGAS For evaluations : 
+
 from ragas import evaluate
 import pandas as pd
 from datasets import Dataset
@@ -14,7 +15,6 @@ import google.generativeai as geminiai
 from ragas.llms import llm_factory
 load_dotenv()
 settings = Settings()
-
 
 geminiai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 

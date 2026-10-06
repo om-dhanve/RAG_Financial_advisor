@@ -1,27 +1,31 @@
 # Embedding user query, retrieval from db and generating response from LLM
 
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import GoogleGenerativeAI
-from langchain_postgres import PGVectorStore
+from langchain_google_genai import GoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langsmith import traceable
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough,RunnableParallel
+from langchain_core.runnables import RunnablePassthrough
+from langchain_postgres import PGVector
 from dotenv import load_dotenv
 from config import Settings
 from models import ChatRequest,ChatResponse,ErrorRespone,MetricsResponse
-from document_ingestion import vectorstore_creation
+from memory_profiler import profile
+load_dotenv()
 import uuid,time
 settings = Settings()
 
-#Model config
+    #Model config
 llm = GoogleGenerativeAI(model=settings.llm_model,temperature=settings.temperature)
-embedding = HuggingFaceEmbeddings(model_name=settings.embedding_model,model_kwargs={"token":settings.hf_token})
+embedding = GoogleGenerativeAIEmbeddings(model=settings.embedding_model,output_dimensionality=768)
+
+# embedding = GoogleGenerativeAIEmbeddings(model=settings.embedding_model,output_dimensionality=768)
+# embedding = HuggingFaceEmbeddings(model_name=settings.embedding_model,model_kwargs={"token":settings.hf_token})
 
 @traceable(name="Chat_with_RAG",run_type="chain")
 def chat_with_rag(user_query : ChatRequest) ->ChatResponse:
-
-    vectorstore = vectorstore_creation()
+    vectorstore = PGVector(embeddings=embedding,
+                        connection=settings.supabase_database_url,
+                        collection_name="RAG_Bank_FAQ's Gemini-embedding",create_extension=True)
     retriever = vectorstore.as_retriever(search_type="similarity",search_kwargs={"k":settings.top_k}) 
     start_time=time.time()
 
@@ -32,7 +36,7 @@ def chat_with_rag(user_query : ChatRequest) ->ChatResponse:
             Include all relevant details from the context that answer the question and is directly relevant to the question
             and display to the user.
             Prefer completeness over brevity. A correct multi step answer is better than an abstracted one-liner answer.
-            Only omit the context that is genuinely irrelevant.  
+            Only omit the context that is genuinely irrelevant. Check the metadata to figure out if the context is relevant to the user question.
             If you cannot answer from the context, say that i dont have context.\n\n
             Context:\n{context}"""
         ),
@@ -47,13 +51,13 @@ def chat_with_rag(user_query : ChatRequest) ->ChatResponse:
 
     def format_sources(docs):
             if not docs:
-                  return None
+                return None
             return [doc.metadata for doc in docs]
 
     def format_context_docs(docs):
-          if not docs:
+        if not docs:
                 return None
-          return [doc.page_content for doc in docs]
+        return [doc.page_content for doc in docs]
 
     fetched_sources = vectorstore.similarity_search(query=user_query.message,k=3)
     documents = format_sources(fetched_sources)
@@ -70,19 +74,25 @@ def chat_with_rag(user_query : ChatRequest) ->ChatResponse:
     #invoking the rag chain for questions
     results = rag_chain.invoke(user_query.message)
     return ChatResponse(
-         response=results,
-         sources= documents,
-         context= context_docs,
-         response_time=time.time()-start_time,
-         model_name= settings.llm_model,
-         thread_id=str(uuid.uuid4())
-         )
-    
+        response=results,
+        sources= documents,
+        context= context_docs,
+        response_time=time.time()-start_time,
+        model_name= settings.llm_model,
+        thread_id=str(uuid.uuid4())
+        )
 
 if __name__ == "__main__" :
-
     print("🖥️ Initializing RAG-Financial Advisor...")
-    question = input(f"Enter your question : ")
+    question = input("Enter question : ")
     user_question = ChatRequest(message=question)
     response = chat_with_rag(user_question)
     print("\n\n--------- Response ------------\n",response.response)
+
+    # How to revoke UPI Mandate?
+
+    
+
+
+
+

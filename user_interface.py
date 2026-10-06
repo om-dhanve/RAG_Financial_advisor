@@ -37,7 +37,7 @@ def invoke_chatwithrag(query):
     question = ChatRequest(message=query)
     result = chat_with_rag(question)
     if result.sources : 
-        sources_display = "\n".join(
+        sources_display = "\n\n".join(
             f"{src.get('doc_title', 'Unknown bank')} - "
             f"{src.get('source','no URL')} | "
             for src in result.sources
@@ -83,4 +83,4 @@ with gr.Blocks() as app:
             )
 
 if __name__ == "__main__":
-    app.launch(share=False,theme=theme)
+    app.launch(share=False,theme=theme,pwa=True)
